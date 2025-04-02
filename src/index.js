@@ -1,89 +1,79 @@
+// main.js - Main Electron Process
 const { app, BrowserWindow } = require('electron');
-const path = require('node:path');
+const path = require('path');
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+// Handle creating/removing shortcuts on Windows when installing/uninstalling
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
-const createWindow = () => {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+// CRITICAL: Enable WebView integration globally
+// This is required for older Electron versions
+app.commandLine.appendSwitch('enable-features', 'WebViewTag');
+
+let mainWindow;
+
+// Create the main application window
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1000,
+    height: 800,
     webPreferences: {
-      //preload: path.join(__dirname, 'preload.js'),
-      webviewTag: true,
-      contextIsolation: false,
-      enableRemoteModule: true,
+      // These settings apply to our main window
       nodeIntegration: true,
+      contextIsolation: false,
+      // CRITICAL: Enable webview tag with proper Node.js integration
+      webviewTag: true,
       webSecurity: true,
-      enableRemoteModule: true,
-      allowRunningInsecureContent: true,
-    },
-  });
-
-  // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, 'index.html'));
-
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
-
-
-  // mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-  //   console.log("url ::::",url)
-  //   if (url === 'about:blank') {
-  //     return {
-  //       action: 'allow',
-  //       overrideBrowserWindowOptions: {
-  //         frame: true,
-  //         fullscreenable: true,
-  //         backgroundColor: 'black',
-  //         webPreferences: {
-  //           nodeIntegration: true,
-  //           contextIsolation: false
-  //         }
-  //       }
-  //     }
-  //   }
-  //   return {
-  //     action: 'allow',
-  //     overrideBrowserWindowOptions: {
-  //       frame: true,
-  //       fullscreenable: true,
-  //       backgroundColor: 'black',
-  //       webPreferences: {
-  //         nodeIntegration: true,
-  //         contextIsolation: false
-  //       }
-  //     }
-  //   }
-  // })
-};
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-  createWindow();
-
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      enableRemoteModule: true
     }
   });
+
+  // Load the initial HTML file
+  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  
+  // Open DevTools in the main window for debugging
+  mainWindow.webContents.openDevTools();
+
+  // Handle window closed event
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+// Create window when Electron is ready
+app.whenReady().then(() => {
+  // CRITICAL: Set global security preferences for WebView tag
+  // This ensures any created WebView tags inherit these preferences
+  app.on('web-contents-created', (event, contents) => {
+    if (contents.getType() === 'webview') {
+      // Enable Node.js integration in WebViews
+      contents.on('will-attach-webview', (event, webPreferences, params) => {
+        // Enable Node.js integration
+        webPreferences.nodeIntegration = true;
+        webPreferences.contextIsolation = false;
+        webPreferences.enableRemoteModule = true;
+        
+        // Log for debugging
+        console.log('WebView created with Node integration enabled');
+      });
+    }
+  });
+  
+  createWindow();
 });
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// Quit when all windows are closed
 app.on('window-all-closed', () => {
+  // On OS X it's common for applications to stay active until explicitly quit
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+app.on('activate', () => {
+  // On OS X it's common to re-create a window when dock icon is clicked
+  if (mainWindow === null) {
+    createWindow();
+  }
+});

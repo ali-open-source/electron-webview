@@ -37,7 +37,7 @@
             border-radius: 5px;
             overflow: hidden;
             background-color: #fff;
-            display: none; /* Initially hidden */
+            /* WebView is visible by default now */
         }
         webview {
             width: 100%;
@@ -47,21 +47,32 @@
         .controls {
             margin-bottom: 20px;
         }
+        .version-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Electron WebView with Node Integration</h1>
-        <p>This example demonstrates how to load an HTML file with Node.js integration enabled using the WebView tag.</p>
+        <p>This example demonstrates a WebView with Node.js integration enabled. Click the button to display version information.</p>
         
         <div class="controls">
-            <button id="loadButton">Load Node Integration Page</button>
-            <button id="hideButton" disabled>Hide WebView</button>
+            <button id="showVersionButton">Show Node.js & Electron Versions</button>
+        </div>
+        
+        <div id="version-panel" class="version-panel">
+            <h3>System Information</h3>
+            <div id="version-info">Click the button to load version information...</div>
         </div>
         
         <div id="webview-container">
-            <!-- The WebView tag will be created dynamically -->
-            <webview src="./node-integration.html" nodeintegrationinsubframes nodeintegration preload="./preload.js"></webview>
+            <!-- WebView is created immediately when the page loads -->
         </div>
     </div>
 
@@ -69,65 +80,79 @@
         // Since we have Node integration enabled in the main window, we can use require directly
         const path = require('path');
         
-        const loadButton = document.getElementById('loadButton');
-        const hideButton = document.getElementById('hideButton');
+        const showVersionButton = document.getElementById('showVersionButton');
+        const versionPanel = document.getElementById('version-panel');
+        const versionInfo = document.getElementById('version-info');
         const webviewContainer = document.getElementById('webview-container');
         
-        //let webview = null;
+        // Create webview immediately when the page loads
+        const webview = document.createElement('webview');
+                
+        // Set the source path to the node-integration HTML file
+        const filePath = 'file://' + path.join(__dirname, 'node-integration.html');
+        webview.src = filePath;
         
-        loadButton.addEventListener('click', () => {
-
-
-          const webview = document.querySelector('webview')
-          webview.addEventListener('dom-ready', () => {
+        // Enable Node integration in the webview
+        webview.setAttribute('nodeintegration', 'true');
+        webview.setAttribute('nodeintegrationinsubframes', 'true');
+        webview.setAttribute('webpreferences', 'contextIsolation=false, enableRemoteModule=true');
+        
+        // Add preload script to ensure Node access
+        webview.setAttribute('preload', path.join(__dirname, 'preload.js'));
+        
+        // Add webview to the container immediately
+        webviewContainer.appendChild(webview);
+        
+        // Event listener for the webview being ready
+        webview.addEventListener('dom-ready', () => {
             console.log('WebView DOM ready');
-            webview.openDevTools()
-          })
-          webview.addEventListener('console-message', (event) => {
-                    console.log('WebView console:', event.message);
-                });
-            // // Show the webview container
-            webviewContainer.style.display = 'block';
-            
-            // // If webview doesn't exist yet, create it
-            if (webview) {
-                //webview = document.createElement('webview');
-                webview.openDevTools();
-                // Set attributes for the webview
-                webview.nodeintegration = true; // Enable Node integration
-                webview.nodeintegrationinsubframes = true; // Enable Node integration in subframes
-                //webview.src = path.join('file://', __dirname, 'node-integration.html');
-                webview.preload = path.join(__dirname, 'preload.js');
-                
-                // Add webview to the container
-                //webviewContainer.appendChild(webview);
-                
-                // Listen for webview events
-                webview.addEventListener('dom-ready', () => {
-                    console.log('WebView DOM ready');
-                    // Uncomment to open DevTools for the webview
-                    webview.openDevTools();
-                    webview.nodeintegration = true; // Enable Node integration
-                    webview.nodeintegrationinsubframes = true; // Enable Node integration in subframes
-                });
-                
-                webview.addEventListener('console-message', (event) => {
-                    console.log('WebView console:', event.message);
-                });
-            }
-            
-            // Update button states
-            loadButton.disabled = true;
-            hideButton.disabled = false;
         });
         
-        hideButton.addEventListener('click', () => {
-            // Hide the webview container
-            webviewContainer.style.display = 'none';
+        // Event listener for console messages from the webview
+        webview.addEventListener('console-message', (event) => {
+            console.log('WebView console:', event.message);
+        });
+        
+        // Show version information when the button is clicked
+        showVersionButton.addEventListener('click', () => {
+            // Show the version panel
+            versionPanel.style.display = 'block';
             
-            // Update button states
-            loadButton.disabled = false;
-            hideButton.disabled = true;
+            // Execute JavaScript in the webview to get version information
+            webview.executeJavaScript(`
+                (function() {
+                    // Check if Node.js is available
+                    if (typeof process !== 'undefined') {
+                        // Get version information
+                        return {
+                            nodeVersion: process.versions.node,
+                            electronVersion: process.versions.electron,
+                            chromeVersion: process.versions.chrome,
+                            platform: process.platform,
+                            architecture: process.arch
+                        };
+                    } else {
+                        return { error: 'Node.js is not available in the WebView' };
+                    }
+                })();
+            `)
+            .then((result) => {
+                // Display the version information
+                if (result.error) {
+                    versionInfo.innerHTML = `<div class="error">${result.error}</div>`;
+                } else {
+                    versionInfo.innerHTML = `
+                        <p><strong>Node.js Version:</strong> ${result.nodeVersion}</p>
+                        <p><strong>Electron Version:</strong> ${result.electronVersion}</p>
+                        <p><strong>Chrome Version:</strong> ${result.chromeVersion}</p>
+                        <p><strong>Platform:</strong> ${result.platform}</p>
+                        <p><strong>Architecture:</strong> ${result.architecture}</p>
+                    `;
+                }
+            })
+            .catch((err) => {
+                versionInfo.innerHTML = `<div class="error">Error getting version info: ${err.message}</div>`;
+            });
         });
     </script>
 </body>
