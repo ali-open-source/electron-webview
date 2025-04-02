@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Node Integration in WebView</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #ffffff;
+        }
+        .version-info {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .system-info {
+            margin-top: 30px;
+        }
+        .node-demo {
+            margin-top: 30px;
+        }
+        pre {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 25px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Node Integration in WebView</h1>
+        <p>This page is loaded in a WebView tag with Node.js integration enabled.</p>
+        
+        <div class="version-info">
+            <h2>Version Information</h2>
+            <div id="nodeVersion"></div>
+            <div id="electronVersion"></div>
+            <div id="chromeVersion"></div>
+        </div>
+        
+        <div class="system-info">
+            <h2>System Information</h2>
+            <div id="platform"></div>
+            <div id="architecture"></div>
+            <div id="userInfo"></div>
+            <div id="homeDir"></div>
+            <div id="tempDir"></div>
+        </div>
+        
+        <div class="node-demo">
+            <h2>Node.js API Demo</h2>
+            <p>Here's an example of reading a file using Node.js fs module:</p>
+            <pre id="fileContent">Loading...</pre>
+        </div>
+    </div>
+
+    <script>
+        // Access Node.js from the webview context
+        // Either use window.nodeProcess and window.nodeRequire from preload.js
+        // or direct access if nodeIntegration is enabled
+        
+        // We'll try both methods to ensure it works
+        
+        const process = window.nodeProcess || window.process;
+        const require = window.nodeRequire || window.require;
+        // console.log('Node.js and Electron versions:',window.process.versions.electron);
+        // console.log('Current platform:',window.process.versions.node);
+        // Display Node.js and Electron versions
+        document.getElementById('nodeVersion').innerHTML = `<strong>Node.js Version:</strong> ${process.versions.node}`;
+        document.getElementById('electronVersion').innerHTML = `<strong>Electron Version:</strong> ${process.versions.electron}`;
+        document.getElementById('chromeVersion').innerHTML = `<strong>Chrome Version:</strong> ${process.versions.chrome}`;
+        
+        // Display system information
+        document.getElementById('platform').innerHTML = `<strong>Platform:</strong> ${process.platform}`;
+        document.getElementById('architecture').innerHTML = `<strong>Architecture:</strong> ${process.arch}`;
+        
+        // Try to access Node.js modules
+        try {
+            const os = require('os');
+            document.getElementById('userInfo').innerHTML = `<strong>Username:</strong> ${os.userInfo().username}`;
+            document.getElementById('homeDir').innerHTML = `<strong>Home Directory:</strong> ${os.homedir()}`;
+            document.getElementById('tempDir').innerHTML = `<strong>Temp Directory:</strong> ${os.tmpdir()}`;
+            
+            // Use the fs module to read the main.js file
+            const fs = require('fs');
+            const path = require('path');
+            
+            try {
+                // Read the main.js file from the correct location
+                const mainJsPath = path.join(__dirname, 'main.js');
+                const fileContent = fs.readFileSync(mainJsPath, 'utf8');
+                document.getElementById('fileContent').textContent = fileContent.slice(0, 500) + '...'; // Display first 500 characters
+            } catch (err) {
+                document.getElementById('fileContent').textContent = `Error reading file: ${err.message}`;
+            }
+        } catch (err) {
+            document.getElementById('userInfo').innerHTML = `<strong>Error accessing Node.js modules:</strong> ${err.message}`;
+        }
+    </script>
+</body>
+</html>

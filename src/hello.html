@@ -1,0 +1,23 @@
+<html>
+    <body>
+        <h1>💖 Hello World! from webview</h1>
+        <p>Welcome to your Electron application.</p>
+    </body>
+    <script>
+        onload = () => {
+          const webview = document.querySelector('webview')
+          const indicator = document.querySelector('.indicator')
+      
+          const loadstart = () => {
+            indicator.innerText = 'loading...'
+          }
+      
+          const loadstop = () => {
+            indicator.innerText = 'loaded successfully'
+          }
+      
+          webview.addEventListener('did-start-loading', loadstart)
+          webview.addEventListener('did-stop-loading', loadstop)
+        }
+      </script>
+</html>
