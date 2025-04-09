@@ -1,159 +1,44 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <meta charset="UTF-8">
-    <title>Electron WebView Demo</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        #webview-container {
-            width: 100%;
-            height: 600px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            overflow: hidden;
-            background-color: #fff;
-            /* WebView is visible by default now */
-        }
-        webview {
-            width: 100%;
-            height: 100%;
-            display: inline-flex;
-        }
-        .controls {
-            margin-bottom: 20px;
-        }
-        .version-panel {
-            margin-top: 15px;
-            padding: 15px;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Electron WebView with Node Integration</h1>
-        <p>This example demonstrates a WebView with Node.js integration enabled. Click the button to display version information.</p>
-        
-        <div class="controls">
-            <button id="showVersionButton">Show Node.js & Electron Versions</button>
-        </div>
-        
-        <div id="version-panel" class="version-panel">
-            <h3>System Information</h3>
-            <div id="version-info">Click the button to load version information...</div>
-        </div>
-        
-        <div id="webview-container">
-            <!-- WebView is created immediately when the page loads -->
-        </div>
-    </div>
+    <title>Main Page</title>
+  </head>
+  <body>
+    <h1>Main Page</h1>
+    <p>This page loads a webview by default. The guest page (index.html) includes a button to show version info.</p>
+    <!-- The webview loads index.html on startup -->
+    <webview id="myWebview"
+             src="node-integration.html"
+             style="width: 100%; height: 80vh;"
+             nodeintegration nodeintegrationinsubframes webpreferences="allowRunningInsecureContent=true, nodeintegration=true, contextIsolation=false, enableRemoteModule=true, nodeintegrationinsubframes">
+    </webview>
+    <webview id="myWebview"
+             src="node-integration.html"
+             style="width: 100%; height: 80vh;"
+             nodeintegration nodeintegrationinsubframes webpreferences="allowRunningInsecureContent=true, nodeintegration=true, contextIsolation=false, enableRemoteModule=true, nodeintegrationinsubframes">
+    </webview>
+    <webview id="myWebview"
+             src="node-integration.html"
+             style="width: 100%; height: 80vh;"
+             nodeintegration nodeintegrationinsubframes webpreferences="allowRunningInsecureContent=true, nodeintegration=true, contextIsolation=false, enableRemoteModule=true, nodeintegrationinsubframes">
+    </webview>
+  </body>
+  <script>
 
-    <script>
-        // Since we have Node integration enabled in the main window, we can use require directly
-        const path = require('path');
-        
-        const showVersionButton = document.getElementById('showVersionButton');
-        const versionPanel = document.getElementById('version-panel');
-        const versionInfo = document.getElementById('version-info');
-        const webviewContainer = document.getElementById('webview-container');
-        
-        // Create webview immediately when the page loads
-        const webview = document.createElement('webview');
-                
-        // Set the source path to the node-integration HTML file
-        const filePath = 'file://' + path.join(__dirname, 'node-integration.html');
-        webview.src = filePath;
-        
+const webview = document.querySelector('webview')
+        webview.addEventListener('dom-ready', () => {
+        webview.openDevTools()
         // Enable Node integration in the webview
         webview.setAttribute('nodeintegration', 'true');
         webview.setAttribute('nodeintegrationinsubframes', 'true');
         webview.setAttribute('webpreferences', 'contextIsolation=false, enableRemoteModule=true');
-        
-        // Add preload script to ensure Node access
-        webview.setAttribute('preload', path.join(__dirname, 'preload.js'));
-        
-        // Add webview to the container immediately
-        webviewContainer.appendChild(webview);
-        
-        // Event listener for the webview being ready
-        webview.addEventListener('dom-ready', () => {
-            console.log('WebView DOM ready');
+        webview.addEventListener('console-message', (e) => {
+          console.log(`Guest page logged a message: ${e.message}`);
         });
-        
-        // Event listener for console messages from the webview
-        webview.addEventListener('console-message', (event) => {
-            console.log('WebView console:', event.message);
+        webview.addEventListener('did-finish-load', () => {
+          console.log('Webview finished loading.');
         });
-        
-        // Show version information when the button is clicked
-        showVersionButton.addEventListener('click', () => {
-            // Show the version panel
-            versionPanel.style.display = 'block';
-            
-            // Execute JavaScript in the webview to get version information
-            webview.executeJavaScript(`
-                (function() {
-                    // Check if Node.js is available
-                    if (typeof process !== 'undefined') {
-                        // Get version information
-                        return {
-                            nodeVersion: process.versions.node,
-                            electronVersion: process.versions.electron,
-                            chromeVersion: process.versions.chrome,
-                            platform: process.platform,
-                            architecture: process.arch
-                        };
-                    } else {
-                        return { error: 'Node.js is not available in the WebView' };
-                    }
-                })();
-            `)
-            .then((result) => {
-                // Display the version information
-                if (result.error) {
-                    versionInfo.innerHTML = `<div class="error">${result.error}</div>`;
-                } else {
-                    versionInfo.innerHTML = `
-                        <p><strong>Node.js Version:</strong> ${result.nodeVersion}</p>
-                        <p><strong>Electron Version:</strong> ${result.electronVersion}</p>
-                        <p><strong>Chrome Version:</strong> ${result.chromeVersion}</p>
-                        <p><strong>Platform:</strong> ${result.platform}</p>
-                        <p><strong>Architecture:</strong> ${result.architecture}</p>
-                    `;
-                }
-            })
-            .catch((err) => {
-                versionInfo.innerHTML = `<div class="error">Error getting version info: ${err.message}</div>`;
-            });
-        });
-    </script>
-</body>
+})
+  </script>
 </html>

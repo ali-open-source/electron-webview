@@ -1,5 +1,5 @@
 // main.js - Main Electron Process
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, WebContentsView } = require('electron');
 const path = require('path');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling
@@ -24,8 +24,8 @@ function createWindow() {
       contextIsolation: false,
       // CRITICAL: Enable webview tag with proper Node.js integration
       webviewTag: true,
-      webSecurity: true,
-      enableRemoteModule: true
+     // webSecurity: true,
+      //enableRemoteModule: true
     }
   });
 
@@ -33,13 +33,14 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
   
   // Open DevTools in the main window for debugging
-  mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
 
   // Handle window closed event
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
+
 
 // Create window when Electron is ready
 app.whenReady().then(() => {
@@ -52,7 +53,7 @@ app.whenReady().then(() => {
         // Enable Node.js integration
         webPreferences.nodeIntegration = true;
         webPreferences.contextIsolation = false;
-        webPreferences.enableRemoteModule = true;
+        //webPreferences.enableRemoteModule = true;
         
         // Log for debugging
         console.log('WebView created with Node integration enabled');
@@ -61,6 +62,23 @@ app.whenReady().then(() => {
   });
   
   createWindow();
+
+  // const view1 = new WebContentsView();
+  // mainWindow.contentView.addChildView(view1);
+  // view1.webContents.loadURL('https://electronjs.org');
+  // view1.setBounds({ x: 0, y: 0, width: 400, height: 400 });
+  // view1.webContents.openDevTools();
+  // view1.webContents.on('will-attach-webview', (event, webPreferences, params) => {
+  //   // Enable Node.js integration
+  //   webPreferences.nodeIntegration = true;
+  //   webPreferences.contextIsolation = false;
+  //   webPreferences.webviewTag = true;
+  //   webPreferences.nodeIntegrationInSubFrames=true;    //webPreferences.enableRemoteModule = true;
+    
+  //   // Log for debugging
+  //   console.log('WebView created with Node integration enabled');
+  // });
+
 });
 
 // Quit when all windows are closed

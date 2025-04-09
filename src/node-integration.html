@@ -1,173 +1,42 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <meta charset="UTF-8">
-    <title>Node Integration in WebView</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            line-height: 1.6;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #ffffff;
-        }
-        .version-info {
-            margin: 20px 0;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        .system-info {
-            margin-top: 30px;
-        }
-        .node-demo {
-            margin-top: 30px;
-        }
-        .status {
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-        }
-        .success {
-            background-color: #dff0d8;
-            border: 1px solid #d6e9c6;
-            color: #3c763d;
-        }
-        .error {
-            background-color: #f2dede;
-            border: 1px solid #ebccd1;
-            color: #a94442;
-        }
-        pre {
-            background-color: #f0f0f0;
-            padding: 10px;
-            border-radius: 4px;
-            overflow-x: auto;
-            font-size: 14px;
-        }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
-        h2 {
-            color: #3498db;
-            margin-top: 25px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Node Integration in WebView</h1>
-        <div id="nodeStatus" class="status">Checking Node.js integration status...</div>
-        
-        <div class="version-info">
-            <h2>Version Information</h2>
-            <div id="nodeVersion">Detecting Node.js version...</div>
-            <div id="electronVersion">Detecting Electron version...</div>
-            <div id="chromeVersion">Detecting Chrome version...</div>
-        </div>
-        
-        <div class="system-info">
-            <h2>System Information</h2>
-            <div id="platform">Detecting platform...</div>
-            <div id="architecture">Detecting architecture...</div>
-            <div id="userInfo">Detecting user info...</div>
-            <div id="homeDir">Detecting home directory...</div>
-            <div id="tempDir">Detecting temp directory...</div>
-        </div>
-        
-        <div class="node-demo">
-            <h2>Node.js API Demo</h2>
-            <p>Here's an example of reading a file using Node.js fs module:</p>
-            <pre id="fileContent">Loading...</pre>
-        </div>
+    <title>Index Page</title>
+  </head>
+  <body>
+    <h1>Index Page</h1>
+    <button id="displayVersionBtn">Display Version Info</button>
+    <div id="versionInfo" style="margin-top: 20px;"></div>
+    <div class="system-info">
+        <h2>System Information</h2>
+        <div id="platform"></div>
+        <div id="architecture"></div>
+        <div id="userInfo"></div>
+        <div id="homeDir"></div>
+        <div id="tempDir"></div>
     </div>
 
     <script>
-        // First, check if we have direct access to Node.js APIs
-        let nodeStatus = document.getElementById('nodeStatus');
-        let directNodeAccess = typeof process !== 'undefined' || false;
-        let preloadNodeAccess = typeof window.nodeProcess !== 'undefined';
-        
-        // Try different methods to access Node.js
-        // 1. Direct access (if nodeIntegration is true)
-        // 2. Via preload script (window.nodeX variables)
-        const process = directNodeAccess ? window.process : (preloadNodeAccess ? window.nodeProcess : null);
-        const require = typeof window.require !== 'undefined' ? window.require : 
-                      (typeof window.nodeRequire !== 'undefined' ? window.nodeRequire : null);
-        
-        // Check if Node.js is available and update status
-        if (process && require) {
-            nodeStatus.className = 'status success';
-            nodeStatus.innerHTML = '<strong>Success!</strong> Node.js integration is working properly.';
-            
-            // Log for debugging
-            console.log('Node.js is available in WebView', process.versions.node);
-            console.log('Access methods:', {
-                directProcess: directNodeAccess,
-                preloadProcess: preloadNodeAccess
-            });
-            
-            // Display Node.js and Electron versions
-            document.getElementById('nodeVersion').innerHTML = `<strong>Node.js Version:</strong> ${process.versions.node}`;
-            document.getElementById('electronVersion').innerHTML = `<strong>Electron Version:</strong> ${process.versions.electron}`;
-            document.getElementById('chromeVersion').innerHTML = `<strong>Chrome Version:</strong> ${process.versions.chrome}`;
-            
-            // Display system information
-            document.getElementById('platform').innerHTML = `<strong>Platform:</strong> ${process.platform}`;
-            document.getElementById('architecture').innerHTML = `<strong>Architecture:</strong> ${process.arch}`;
-            
-            // Use Node.js modules
-            try {
-                const os = require('os');
-                document.getElementById('userInfo').innerHTML = `<strong>Username:</strong> ${os.userInfo().username}`;
-                document.getElementById('homeDir').innerHTML = `<strong>Home Directory:</strong> ${os.homedir()}`;
-                document.getElementById('tempDir').innerHTML = `<strong>Temp Directory:</strong> ${os.tmpdir()}`;
-                
-                // Use the fs module to read the main.js file
-                const fs = require('fs');
-                const path = require('path');
-                
-                try {
-                    // Read the main.js file
-                    // Use __dirname if available, or get the directory from window.location
-                    const currentDir = typeof __dirname !== 'undefined' ? __dirname : 
-                                     path.dirname(decodeURIComponent(window.location.pathname.slice(process.platform === 'win32' ? 8 : 7)));
-                    
-                    const mainJsPath = path.join(currentDir, 'main.js');
-                    const fileContent = fs.readFileSync(mainJsPath, 'utf8');
-                    document.getElementById('fileContent').textContent = fileContent.slice(0, 500) + '...'; // Display first 500 characters
-                } catch (err) {
-                    document.getElementById('fileContent').textContent = `Error reading file: ${err.message}\n\nStack: ${err.stack}`;
-                }
-            } catch (err) {
-                document.getElementById('userInfo').innerHTML = `<strong>Error accessing Node.js modules:</strong> ${err.message}`;
-                document.getElementById('fileContent').textContent = `Module error: ${err.stack}`;
-            }
-        } else {
-            // Node.js is not available
-            nodeStatus.className = 'status error';
-            nodeStatus.innerHTML = '<strong>Error!</strong> Node.js integration is not working in this WebView.';
-            
-            // Update UI to show error
-            document.getElementById('nodeVersion').innerHTML = '<strong>Node.js:</strong> Not available';
-            document.getElementById('electronVersion').innerHTML = '<strong>Electron:</strong> Not available';
-            document.getElementById('platform').innerHTML = '<strong>Platform:</strong> Not available (No Node.js access)';
-            document.getElementById('fileContent').textContent = 'Cannot read file: Node.js integration is not working';
-            
-            // Log information about the window environment
-            console.log('Window properties available:', Object.keys(window).filter(key => key.startsWith('node')));
-            console.log('Node integration check failed');
-        }
+      document.getElementById('displayVersionBtn')
+        .addEventListener('click', () => {
+          // Display the versions using Node's process.versions
+          versionInfoDiv.innerHTML = `
+            <p><strong>Node.js Version:</strong> ${window.process.versions.node}</p>
+            <p><strong>Electron Version:</strong> ${window.process.versions.electron}</p>
+          `;
+        });
+        const versionInfoDiv = document.getElementById('versionInfo');
+          // Display the versions using Node's process.versions
+          versionInfoDiv.innerHTML = `
+            <p><strong>Node.js Version:</strong> ${window.process.versions.node}</p>
+            <p><strong>Electron Version:</strong> ${window.process.versions.electron}</p>
+          `;
+            const os = require('os');
+            document.getElementById('userInfo').innerHTML = `<strong>Username:</strong> ${os.userInfo().username}`;
+            document.getElementById('homeDir').innerHTML = `<strong>Home Directory:</strong> ${os.homedir()}`;
+            document.getElementById('tempDir').innerHTML = `<strong>Temp Directory:</strong> ${os.tmpdir()}`;
+
     </script>
-</body>
+  </body>
 </html>
